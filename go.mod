@@ -1,4 +1,4 @@
-module github.com/jung-kurt/gofpdf
+module github.com/telekom-security/gofpdf/v3
 
 go 1.12
 

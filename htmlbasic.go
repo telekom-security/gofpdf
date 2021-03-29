@@ -122,8 +122,10 @@ func (f *Fpdf) HTMLBasicNew() (html HTMLBasicType) {
 // current position is left at the end of the text.
 //
 // lineHt indicates the line height in the unit of measure specified in New().
-func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
+func (html *HTMLBasicType) Write(lineHt float64, htmlStr string, leftOffset float64) {
 	var boldLvl, italicLvl, underscoreLvl, linkBold, linkItalic, linkUnderscore int
+	var originalMargin = html.pdf.lMargin
+	var leftMargin = html.pdf.lMargin + leftOffset
 	var textR, textG, textB = html.pdf.GetTextColor()
 	var hrefStr string
 	if html.Link.Bold {
@@ -162,6 +164,7 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 	list := HTMLBasicTokenize(htmlStr)
 	var ok bool
 	alignStr := "L"
+	html.pdf.SetLeftMargin(leftMargin)
 	for _, el := range list {
 		switch el.Cat {
 		case 'T':
@@ -199,6 +202,13 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 				if !ok {
 					hrefStr = ""
 				}
+			case "ul":
+				leftMargin += 2
+				html.pdf.SetLeftMargin(leftMargin)
+				html.pdf.Ln(lineHt * 0.2)
+			case "li":
+				html.pdf.Ln(lineHt)
+				html.pdf.Write(lineHt, "\u2022 ")
 			}
 		case 'C':
 			switch el.Str {
@@ -214,7 +224,12 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string) {
 			case "right":
 				html.pdf.Ln(lineHt)
 				alignStr = "L"
+			case "ul":
+				leftMargin -= 2
+				html.pdf.SetLeftMargin(leftMargin)
+				html.pdf.Ln(lineHt + lineHt * 0.2)
 			}
 		}
 	}
+	html.pdf.SetLeftMargin(originalMargin)
 }
