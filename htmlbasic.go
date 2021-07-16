@@ -163,19 +163,25 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string, leftOffset floa
 	}
 	list := HTMLBasicTokenize(htmlStr)
 	var ok bool
+	var isCell bool
 	alignStr := "L"
 	html.pdf.SetLeftMargin(leftMargin)
 	for _, el := range list {
 		switch el.Cat {
 		case 'T':
-			if len(hrefStr) > 0 {
-				putLink(hrefStr, el.Str)
-				hrefStr = ""
+			if isCell {
+				html.pdf.CellFormat(12, lineHt, el.Str, "", 0,
+					"L", false, 0, "")
 			} else {
-				if alignStr == "C" || alignStr == "R" {
-					html.pdf.WriteAligned(0, lineHt, el.Str, alignStr)
+				if len(hrefStr) > 0 {
+					putLink(hrefStr, el.Str)
+					hrefStr = ""
 				} else {
-					html.pdf.Write(lineHt, el.Str)
+					if alignStr == "C" || alignStr == "R" {
+						html.pdf.WriteAligned(0, lineHt, el.Str, alignStr)
+					} else {
+						html.pdf.Write(lineHt, el.Str)
+					}
 				}
 			}
 		case 'O':
@@ -209,6 +215,14 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string, leftOffset floa
 			case "li":
 				html.pdf.Ln(lineHt)
 				html.pdf.Write(lineHt, "\u2022 ")
+			case "table":
+				html.pdf.Ln(lineHt)
+				html.pdf.SetLeftMargin(leftMargin)
+			case "th":
+				setStyle(1, 0, 0)
+				isCell = true
+			case "td":
+				isCell = true
 			}
 		case 'C':
 			switch el.Str {
@@ -227,7 +241,14 @@ func (html *HTMLBasicType) Write(lineHt float64, htmlStr string, leftOffset floa
 			case "ul":
 				leftMargin -= 2
 				html.pdf.SetLeftMargin(leftMargin)
-				html.pdf.Ln(lineHt + lineHt * 0.2)
+				html.pdf.Ln(lineHt + lineHt*0.2)
+			case "th":
+				setStyle(-1, 0, 0)
+				isCell = false
+			case "td":
+				isCell = false
+			case "tr":
+				html.pdf.Ln(lineHt)
 			}
 		}
 	}
